@@ -12,12 +12,10 @@ class CountdownCheck(delay:Long, duration: Long): CountDownTimer(delay, duration
     private lateinit var listener: CountdownCheckListener
 
     override fun onFinish() {
-        content = "after$content"
         listener.checkResult(content)
     }
 
     override fun onTick(millisUntilFinished: Long) {
-        println("count down: #$millisUntilFinished")
     }
 
     fun startCheck(t: String, listener: CountdownCheckListener) {

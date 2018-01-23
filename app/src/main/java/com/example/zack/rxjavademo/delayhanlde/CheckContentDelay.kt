@@ -16,7 +16,6 @@ class CheckContentDelay private constructor() {
 
     init {
         checkRunnable = Runnable {
-            println("check $content")
             listener.checkResult("result#$content")
         }
     }
@@ -27,9 +26,6 @@ class CheckContentDelay private constructor() {
 
     fun post(t: String, listener: CountdownCheckListener) {
         remove()
-        if (!t.isNotEmpty()) {
-            return
-        }
         this.listener = listener
         content = t
         handler.postDelayed(checkRunnable, delay)
