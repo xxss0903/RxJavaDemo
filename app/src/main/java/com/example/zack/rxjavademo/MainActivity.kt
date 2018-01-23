@@ -8,6 +8,7 @@ import android.text.TextWatcher
 import android.view.View
 import com.example.zack.rxjavademo.delayhanlde.CheckContentDelay
 import com.example.zack.rxjavademo.delayhanlde.CountdownCheck
+import com.example.zack.rxjavademo.delayhanlde.CountdownCheckListener
 import com.example.zack.rxjavademo.rxbus.RxBus
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -64,10 +65,20 @@ class MainActivity : AppCompatActivity() {
 
     fun post(t: String) {
         // handler type
-        // CheckContentDelay.instance.post(t)
+         CheckContentDelay.instance.post(t, object: CountdownCheckListener{
+             override fun checkResult(result: String) {
+                 println("check result: $result" + " at ${Thread.currentThread()}")
+                 tv_content.text = result
+             }
+         })
 
         // count down timer
-         countdownCheck.startCheck(t)
+        //countdownCheck.startCheck(t, object: CountdownCheckListener{
+        //     override fun checkResult(result: String) {
+        //        println("check result: $result")
+        //        tv_content.text = result
+        //     }
+        // })
 
         // rxbus
         // RxBus.instance.post(t)

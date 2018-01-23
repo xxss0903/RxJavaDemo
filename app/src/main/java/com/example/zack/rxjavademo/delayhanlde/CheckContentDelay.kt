@@ -6,16 +6,18 @@ import android.os.Handler
  * check content by handler
  * Created by zack on 2018/1/22.
  */
-class CheckContentDelay private constructor(){
+class CheckContentDelay private constructor() {
 
     private val handler: Handler = Handler()
     private val checkRunnable: Runnable
     private val delay: Long = 2000
     private lateinit var content: String
+    private lateinit var listener: CountdownCheckListener
 
     init {
         checkRunnable = Runnable {
             println("check $content")
+            listener.checkResult("result#$content")
         }
     }
 
@@ -23,16 +25,17 @@ class CheckContentDelay private constructor(){
         val instance = CheckContentDelay()
     }
 
-    fun post(t: String){
+    fun post(t: String, listener: CountdownCheckListener) {
         remove()
         if (!t.isNotEmpty()) {
             return
         }
+        this.listener = listener
         content = t
         handler.postDelayed(checkRunnable, delay)
     }
 
-    fun remove(){
+    fun remove() {
         content = ""
         handler.removeCallbacks(checkRunnable)
     }
