@@ -25,9 +25,9 @@ class CheckContentDelay private constructor() {
     }
 
     fun post(t: String, listener: CountdownCheckListener) {
-        remove()
         this.listener = listener
         content = t
+        remove()
         handler.postDelayed(checkRunnable, delay)
     }
 

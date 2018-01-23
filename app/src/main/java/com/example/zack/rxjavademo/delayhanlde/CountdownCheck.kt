@@ -20,9 +20,9 @@ class CountdownCheck(delay:Long, duration: Long): CountDownTimer(delay, duration
 
     fun startCheck(t: String, listener: CountdownCheckListener) {
         content = t
+        this.listener = listener
         cancel()
         start()
-        this.listener = listener
     }
 
 }
