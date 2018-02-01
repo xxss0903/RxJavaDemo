@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- MessageLinearLayout -->
+    <declare-styleable name="MessageLinearLayout">
+        <attr name="show_bottom_message" format="boolean" />
+        <attr name="bottom_message_layout" format="integer" />
+        <attr name="bottom_message_text" format="string" />
+        <attr name="bottom_message_background" format="integer" />
+        <attr name="bottom_message_icon" format="integer" />
+    </declare-styleable>
+</resources>

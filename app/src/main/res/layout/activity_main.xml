@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:background="@android:color/white"
     android:orientation="vertical"
     android:layout_height="match_parent"
     tools:context="com.example.zack.rxjavademo.MainActivity">
@@ -12,12 +13,31 @@
         android:layout_width="match_parent"
         android:layout_height="48dp" />
 
+    <com.example.zack.rxjavademo.delayhanlde.MessageLinearLayout
+        android:id="@+id/etCountainer"
+        app:bottom_message_text="input error"
+        android:orientation="vertical"
+        android:paddingBottom="16dp"
+        android:paddingEnd="16dp"
+        android:paddingStart="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.example.zack.rxjavademo.delayhanlde.DelayCheckEditText
+            android:id="@+id/etDelay"
+            android:textColor="@android:color/black"
+            android:layout_width="match_parent"
+            android:layout_height="48dp" />
+
+    </com.example.zack.rxjavademo.delayhanlde.MessageLinearLayout>
+
+
     <TextView
         android:height="48dp"
         android:textAlignment="center"
         android:id="@+id/tv_content"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="@android:color/black"
         android:text="Hello World!"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -28,6 +48,24 @@
         android:id="@+id/btn_click"
         android:text="Click"
         android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/btn_countdown"
+        android:text="测试 CountTimerEditText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/btnSwitchMap"
+        android:text="测试两个连续SwitchMap"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/btnLimitPrintScreen"
+        android:text="@string/limit_printscreen"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
 </LinearLayout>

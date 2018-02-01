@@ -1,34 +1,38 @@
 package com.example.zack.rxjavademo.rxbus
 
-import com.jakewharton.rxrelay2.PublishRelay
-import com.jakewharton.rxrelay2.Relay
 import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.Subject
+import java.util.concurrent.TimeUnit
+
 
 /**
  * rxbus depends rrelay
  * Created by zack on 2018/1/23.
  */
-class RxBus{
+class RxBus private constructor(){
 
-    private val bus: Relay<Any> = PublishRelay.create<Any>().toSerialized()
+    private var bus: PublishSubject<Any> = PublishSubject.create<Any>()
 
     companion object {
         val instance = RxBus()
     }
 
-    fun post(obj: Any){
-        bus.accept(obj)
+    fun post(t: Any){
+        bus.onNext(t)
+
     }
 
-    fun toObservable(aClass: Class<Any>): Observable<Any>{
-        return bus.ofType(aClass)
+    fun<T> toObservable(tClass: Class<T>): Observable<T> {
+        return bus.ofType(tClass)
     }
 
-    fun toObservable(): Boolean{
+    fun toObservable():Observable<Any>{
+        return bus
+    }
+
+    fun hasObservers():Boolean{
         return bus.hasObservers()
     }
 
-    fun hasObservers(): Boolean{
-        return bus.hasObservers()
-    }
 }

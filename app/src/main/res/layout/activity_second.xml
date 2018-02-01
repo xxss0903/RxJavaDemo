@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:layout_width="200dp"
+        android:layout_height="200dp">
+
+        <com.example.zack.rxjavademo.delayhanlde.MessageLinearLayout
+            android:id="@+id/etCountainerSecond"
+            app:bottom_message_text="input error"
+            android:orientation="vertical"
+            android:paddingBottom="16dp"
+            android:paddingEnd="16dp"
+            android:paddingStart="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <com.example.zack.rxjavademo.delayhanlde.DelayCheckEditText
+                android:id="@+id/etDelaySecond"
+                android:textColor="@android:color/black"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+
+        </com.example.zack.rxjavademo.delayhanlde.MessageLinearLayout>
+
+        <TextView
+            android:id="@+id/tv_content_second"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:layout_gravity="center_horizontal"
+            android:text="@string/test_delay"
+            android:id="@+id/btnClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:layout_gravity="center_horizontal"
+            android:id="@+id/btnResetCountTime"
+            android:text="@string/reset_delay_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+</RelativeLayout>
