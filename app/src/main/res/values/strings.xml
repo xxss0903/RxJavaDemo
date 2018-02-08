@@ -4,4 +4,10 @@
     <string name="reset_delay_count">重置倒计时为10秒</string>
     <string name="limit_printscreen">禁止截屏</string>
     <string name="allow_printscreen">允许截屏</string>
+    <string name="origin_string">原始字符串</string>
+    <string name="input_origin">请输入原始字符串</string>
+    <string name="security_string">加密字符串</string>
+    <string name="security_change">加密</string>
+    <string name="scheme_open">网页打开app</string>
+    <string name="scheme_link">hsbc</string>
 </resources>

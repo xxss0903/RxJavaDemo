@@ -13,6 +13,7 @@ import com.example.zack.rxjavademo.delayhanlde.OnCheckTextListener
 import com.example.zack.rxjavademo.printscreen.LimitPrintScreenActivity
 import com.example.zack.rxjavademo.rxbus.MyEmitter
 import com.example.zack.rxjavademo.rxbus.RxBus
+import com.example.zack.rxjavademo.scheme.SchemeActivity
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.ObservableOnSubscribe
@@ -56,6 +57,15 @@ class MainActivity : AppCompatActivity() {
         testSwitchMapBySwitchMap()
 
         testLimitPrintScreen()
+
+        testSchemeOpen()
+    }
+
+    private fun testSchemeOpen() {
+        btnSchemeOpen.setOnClickListener({
+            val intent = Intent(MainActivity@this, SchemeActivity::class.java)
+            startActivity(intent)
+        })
     }
 
     fun testLimitPrintScreen(){
