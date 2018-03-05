@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">RxJavaDemo</string>
+    <!--<string name="app_name">RxJavaDemo</string>-->
     <string name="test_delay">测试延迟测试</string>
     <string name="reset_delay_count">重置倒计时为10秒</string>
     <string name="limit_printscreen">禁止截屏</string>
@@ -10,4 +10,10 @@
     <string name="security_change">加密</string>
     <string name="scheme_open">网页打开app</string>
     <string name="scheme_link">hsbc</string>
+    <string name="scan_qr_code">Scan QRCode</string>
+    <string name="generate_qr_code">Generate QRCode</string>
+    <string name="plz_put_code_in_rect">Please put QRCode in rect</string>
+    <string name="qr_scan">二维码扫描</string>
+    <string name="open_flash">OpenFlash</string>
+    <string name="send_to_contact">Send To Contact</string>
 </resources>

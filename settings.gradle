@@ -1,1 +1,1 @@
-include ':app', ':webbrowser'
+include ':app', ':webbrowser', ':hsbczxing'

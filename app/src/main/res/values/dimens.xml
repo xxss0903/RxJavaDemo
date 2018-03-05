@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="toolbar_icon_size">30dp</dimen>
+    <dimen name="qr_code_size">40dp</dimen>
+    <dimen name="margin_common">20dp</dimen>
+</resources>

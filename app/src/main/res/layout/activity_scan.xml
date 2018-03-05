@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.journeyapps.barcodescanner.DecoratedBarcodeView
+        android:id="@+id/dbv_scan"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:zxing_framing_rect_height="200dp"
+        app:zxing_framing_rect_width="200dp"
+        app:zxing_preview_scaling_strategy="centerCrop"
+        app:zxing_scanner_layout="@layout/hsbc_barcode_scanner"
+        app:zxing_use_texture_view="false" />
+
+    <android.support.v7.widget.Toolbar
+        android:layout_width="match_parent"
+        android:id="@+id/toolbar"
+        android:fitsSystemWindows="true"
+        android:minHeight="?attr/actionBarSize"
+        android:layout_height="wrap_content"
+        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        >
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/iv_back"
+                android:layout_centerVertical="true"
+                android:src="@mipmap/ic_back"
+                android:layout_width="@dimen/toolbar_icon_size"
+                android:layout_height="@dimen/toolbar_icon_size" />
+
+            <ImageView
+                android:id="@+id/iv_flash"
+                android:background="@mipmap/ic_flash"
+                android:layout_marginRight="20dp"
+                android:layout_centerVertical="true"
+                android:layout_alignParentRight="true"
+                android:gravity="center"
+                android:scaleType="centerCrop"
+                android:layout_width="@dimen/toolbar_icon_size"
+                android:layout_height="@dimen/toolbar_icon_size"
+                android:text="@string/open_flash" />
+
+            <ImageView
+                android:layout_marginRight="20dp"
+                android:id="@+id/iv_album"
+                android:layout_toLeftOf="@id/iv_flash"
+                android:background="@mipmap/ic_album"
+                android:layout_centerVertical="true"
+                android:gravity="center"
+                android:scaleType="centerCrop"
+                android:layout_width="@dimen/toolbar_icon_size"
+                android:layout_height="@dimen/toolbar_icon_size"
+                android:text="@string/open_flash" />
+
+        </RelativeLayout>
+
+
+    </android.support.v7.widget.Toolbar>
+
+</RelativeLayout>

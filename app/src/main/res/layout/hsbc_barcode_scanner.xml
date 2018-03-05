@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.journeyapps.barcodescanner.BarcodeView
+            android:id="@+id/zxing_barcode_surface"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.shadowdata.hsbczxing.HsbcFinderView
+            android:id="@+id/zxing_viewfinder_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <View
+            android:id="@+id/view_rect"
+            android:layout_centerInParent="true"
+            android:layout_width="230dp"
+            android:layout_height="230dp"/>
+        
+        <ImageView
+            android:id="@+id/iv_qr_code"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/view_rect"
+            android:src="@mipmap/ic_qr_scan"
+            android:layout_marginTop="@dimen/margin_common"
+            android:layout_width="@dimen/qr_code_size"
+            android:layout_height="@dimen/qr_code_size" />
+
+        <TextView
+            android:layout_marginBottom="@dimen/margin_common"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentBottom="true"
+            android:id="@+id/zxing_status_view"
+            android:text="@string/send_to_contact"
+            android:textColor="@android:color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
+
+</merge>
