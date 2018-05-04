@@ -66,6 +66,14 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:2.8.9'
     implementation project(':hsbczxing')
+    //   // emv-berltv
+    //    compile 'io.github.binaryfoo:emvbertlv:0.1.7'
+    implementation files('libs/emv-bertlv-0.1.7.jar')
+    // libphonenumber
+    compile 'com.googlecode.libphonenumber:libphonenumber:8.9.4'
+    compile 'com.googlecode.libphonenumber:geocoder:2.93'
+    compile 'com.googlecode.libphonenumber:carrier:1.83'
+
 }
 repositories {
     mavenCentral()

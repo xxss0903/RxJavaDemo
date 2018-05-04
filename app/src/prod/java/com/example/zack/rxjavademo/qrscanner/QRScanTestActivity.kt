@@ -9,13 +9,20 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
+import android.util.Log
 import android.widget.Toast
 import com.example.zack.rxjavademo.R
+import com.example.zack.rxjavademo.R.id.iv_generated_qr
+import com.example.zack.rxjavademo.R.id.tv_tlv_content
+import com.example.zack.rxjavademo.emvco.BerTlvParser
+import com.example.zack.rxjavademo.emvco.BerTlvs
+import com.example.zack.rxjavademo.emvco.HexUtil
+import com.example.zack.rxjavademo.merchantparser.EmvMerchant
+import com.example.zack.rxjavademo.merchantparser.EmvcoDecodeException
 import com.google.zxing.integration.android.IntentIntegrator
 import com.google.zxing.integration.android.IntentIntegrator.ONE_D_CODE_TYPES
 import com.google.zxing.integration.android.IntentIntegrator.QR_CODE_TYPES
 import com.google.zxing.integration.android.IntentResult
-import com.shadowdata.hsbczxing.CaptureActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_test_scan.*
 
@@ -75,12 +82,7 @@ class QRScanTestActivity : Activity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-
-        // captureactivity
-//        if (resultCode == RESULT_OK && data != null) {
-//            parseStringToPayCode(data.getStringExtra("result"))
-//        }
-
+        parseStringToEmvco("")
         // scanactivity
         val parseResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
         if (parseResult != null) {
@@ -97,15 +99,77 @@ class QRScanTestActivity : Activity() {
             return
         }
         parseStringToPayCode(result.contents)
+
+        parseStringWithMerchantFormat(result.contents)
+    }
+
+    private fun parseStringWithMerchantFormat(content: String?) {
+        if (content == null || content.isNullOrEmpty()) {
+            return
+        }
+        try {
+            val result = EmvMerchant.decode2(content)
+
+            if (result == null) {
+                Toast.makeText(this, "decode wrong", Toast.LENGTH_SHORT).show()
+            } else {
+
+            }
+        } catch (e: EmvcoDecodeException) {
+            e.printStackTrace()
+        }
     }
 
     private fun parseStringToPayCode(content: String?) {
-        if (content == null){
+        if (content == null) {
             Toast.makeText(this, R.string.msg_error, Toast.LENGTH_SHORT).show()
             return
         }
-        qrBitmap = QRUtil.instance.generateQRBitmap(content)
+
+        val content2 = "00020101021126340012HK.COM.HKICL010300402079999999520400005303344540578.905802NA5902NA6002NA6304C8B2"
+        parseStringToEmvco(content2)
+
+        qrBitmap = QRUtil.instance.generateQRBitmap(content2)
         iv_generated_qr.setImageBitmap(qrBitmap)
+    }
+
+    fun parseStringToEmvco(content: String?) {
+        if (content == null) {
+            return
+        }
+        val EMVCO_HEADER = "hQVDUF"
+        if (content.startsWith(EMVCO_HEADER)) {
+            val base64 = HexUtil.decodeBase64(content)
+            val parser = BerTlvParser()
+            val tlvList = parser.parse(base64)
+            displayTlvList(tlvList)
+        }
+    }
+
+    private fun displayTlvList(tlvList: BerTlvs?) {
+        if (tlvList == null) {
+            return
+        }
+        val tlvList = tlvList.list
+        var result = ""
+        result = HexUtil.toFormattedHexString(tlvList)
+        tv_tlv_content.text = result
+        Log.d("tlvresult", result)
+//        Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
+    }
+
+    fun toBytes(str: String?): ByteArray {
+        if (str == null || str.trim { it <= ' ' } == "") {
+            return ByteArray(0)
+        }
+
+        val bytes = ByteArray(str.length / 2)
+        for (i in 0 until str.length / 2) {
+            val subStr = str.substring(i * 2, i * 2 + 2)
+            bytes[i] = Integer.parseInt(subStr, 16).toByte()
+        }
+
+        return bytes
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?) {

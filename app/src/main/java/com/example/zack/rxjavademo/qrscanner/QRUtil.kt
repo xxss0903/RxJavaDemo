@@ -54,7 +54,7 @@ class QRUtil {
         return BarcodeEncoder().createBitmap(matrix)
     }
 
-    public fun scanImageQrCode(qrBitmap: Bitmap?): Observable<String> {
+    fun scanImageQrCode(qrBitmap: Bitmap?): Observable<String> {
         return Observable.create(ObservableOnSubscribe<String> { e ->
             val content = QRCodeDecoder.syncDecodeQRCode(qrBitmap)
             if (content == null) {

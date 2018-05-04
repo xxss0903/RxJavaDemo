@@ -17,6 +17,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
+    <TextView
+        android:visibility="gone"
+        android:layout_marginLeft="@dimen/margin_common"
+        android:layout_marginRight="@dimen/margin_common"
+        android:layout_marginTop="@dimen/margin_common"
+        android:id="@+id/tv_tlv_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
     <ImageView
         android:layout_margin="@dimen/margin_common"
         android:id="@+id/iv_generated_qr"

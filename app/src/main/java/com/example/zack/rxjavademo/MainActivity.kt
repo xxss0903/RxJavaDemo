@@ -6,10 +6,18 @@ import android.os.Handler
 import android.support.v7.app.AppCompatActivity
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import com.example.zack.rxjavademo.delayhanlde.CheckContentDelay
 import com.example.zack.rxjavademo.delayhanlde.CountdownCheck
 import com.example.zack.rxjavademo.delayhanlde.OnCheckTextListener
+import com.example.zack.rxjavademo.emvco.*
+import com.example.zack.rxjavademo.libphonenumberdemo.LibPhoneNumberActivity
+import com.example.zack.rxjavademo.location.MockLocationActivity
+import com.example.zack.rxjavademo.merchantparser.CRC162
+import com.example.zack.rxjavademo.merchantparser.CRC16Util
+import com.example.zack.rxjavademo.merchantparser.CrcUtil
+import com.example.zack.rxjavademo.merchantparser.EmvMerchant
 import com.example.zack.rxjavademo.printscreen.LimitPrintScreenActivity
 import com.example.zack.rxjavademo.qrscanner.QRScanTestActivity
 import com.example.zack.rxjavademo.rxbus.MyEmitter
@@ -61,6 +69,92 @@ class MainActivity : AppCompatActivity() {
 
         testSchemeOpen()
 
+        parseQrcode()
+
+        testCRC16()
+
+        testEmvco()
+
+        testMockLocation()
+
+        testPhoneNumber()
+    }
+
+    private fun testPhoneNumber() {
+        btn_libphonenumber.setOnClickListener {
+            startActivity(Intent(this, LibPhoneNumberActivity::class.java))
+        }
+    }
+
+    private fun testMockLocation() {
+        btn_mock_location.setOnClickListener({
+            startActivity(Intent(this, MockLocationActivity::class.java))
+        })
+    }
+
+    private fun testEmvco() {
+        testEncodeEmvco()
+    }
+
+    private fun testEncodeEmvco() {
+        EmvMerchant.encode(null)
+    }
+
+    private fun testCRC16() {
+//        val content = "00020101021229300012D156000000000510A93FO3230Q31280012D15600000001030812345678520441115802CN5914BEST TRANSPORT6007BEIJING64200002ZH0104最佳运输0202北京540523.7253031565502016233030412340603***0708A60086670902ME91320016A0112233449988770708123456786304"
+        val content = "0002010102112600hk.com.hkicl01030030200030004000500520400005802NA5902NA6002NA5303344540522.220101-12345676304"
+        val hexStr = HexUtil.strTo16(content)
+//      val hexStr = "303030323031303130323132323933303030313244313536303030303030303030353130413933464F33323330513331323830303132443135363030303030303031303330383132333435363738353230343431313135383032434E3539313442455354205452414E53504F5254363030374245494A494E4736343230303030325A4830313034E69C80E4BDB3E8BF90E8BE9330323032E58C97E4BAAC3534303532332E373235333033313536353530323031363233333033303431323334303630332A2A2A303730384136303038363637303930324D4539313332303031364130313132323333343439393838373730373038313233343536373836333034"
+//        val hexStr = "303030323031303130323132323933303030313244313536303030303030303030353130413933464F33323330513331323830303132443135363030303030303031303330383132333435363738353230343431313135383032434E3539313442455354205452414E53504F5254363030374245494A494E4736343230303030325A4830313034E69C80E4BDB3E8BF90E8BE9330323032E58C97E4BAAC3534303532332E373235333033313536353530323031363233333033303431323334303630332A2A2A303730384136303038363637303930324D4539313332303031364130313132323333343439393838373730373038313233343536373836333034"
+        val hexArray = HexUtil.hexStringToByteArray(hexStr)
+
+        Log.d("hexstr", "hex: " + hexStr)
+        val result = CRC16Util.calcCrc16(hexArray)
+        Log.d("hexstr", "crc16: " + result)
+        val result2 = CRC16Util.makeCrc(hexArray)
+        Log.d("hexstr 2", "crc16: " + result2)
+//        val result3 = CRC16().computeCheckSum(hexStr.toByteArray(Charsets.UTF_8))
+//        Log.d("hexstr 3", "crc16: " + result3)
+        val result4 = CRC16Util.getCRC16(hexArray)
+        Log.d("hexstr 4", "crc16: " + result4)
+        val result5 = CrcUtil.crc_16_CCITT_False(hexArray)
+        Log.d("hexstr 5", "crc16: " + result5)
+        val result6 = CrcUtil.crc16(hexArray)
+        Log.d("hexstr 6", "crc16: " + result6)
+
+        val result7 = com.example.zack.rxjavademo.merchantparser.CRC16.computeCRC16ByNormalString(content)
+        Log.d("hexstr 7", "crc6: " + result7)
+
+        val result8 = CRC162.computeCrc16Normal(content)
+        Log.d("hexstr 8", "crc16: " + result8)
+    }
+
+    fun toHexArray(inputStr: String): ByteArray {
+        val result = ByteArray(inputStr.length / 2)
+        for (i in 0 until inputStr.length / 2)
+            result[i] = (Integer.parseInt(inputStr.substring(i * 2, i * 2 + 2), 16) and 0xff).toByte()
+        return result
+    }
+
+    private fun parseQrcode() {
+        val logger = object : IBerTlvLogger {
+            override fun isDebugEnabled(): Boolean {
+                return true
+            }
+
+            override fun debug(aFormat: String?, vararg args: Any?) {
+                System.out.println("tlv " + aFormat + args)
+            }
+        }
+//        val content = "00020101021226340012HK.COM.HKICL010300402070009999520400005303344540555.005802NA5902NA6002NA620063046734"
+        val content = "hQVDUFYwMWETTwegAAAAVVVVUAhQcm9kdWN0MWETTwegAAAAZmZmUAhQcm9kdWN0MmJJWggSNFZ4kBI0WF8gDkNBUkRIT0xERVIvRU1WXy0IcnVlc2RlZW5kIZ8QBwYBCgMAAACfJghYT9OF+iNLzJ82AgABnzcEbVjvEw=="
+        val bytes = HexUtil.decodeBase64(content)
+//        val content = "50045649534157131000023100000033D44122011003400000481F"
+//        val bytes = HexUtil.parseHex(content)
+//        val decodeBase64 = HexUtil.decodeBase64(content)
+        val parser = BerTlvParser(logger)
+        val tlv = parser.parse(bytes, 0, bytes.size)
+        BerTlvLogger.log("tlv ", tlv, logger)
     }
 
     private fun testSchemeOpen() {

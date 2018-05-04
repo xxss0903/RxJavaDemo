@@ -48,10 +48,7 @@ final class CameraConfigurationManager {
     private static final double MAX_ASPECT_DISTORTION = 0.15;
 
     private final Context context;
-
-    // 屏幕分辨率
     private Point screenResolution;
-    // 相机分辨率
     private Point cameraResolution;
 
     public CameraConfigurationManager(Context context) {

@@ -16,4 +16,6 @@
     <string name="qr_scan">二维码扫描</string>
     <string name="open_flash">OpenFlash</string>
     <string name="send_to_contact">Send To Contact</string>
+    <string name="seperate_phonenumber">分离电话区号</string>
+    <string name="input_country">输入国家(CN)</string>
 </resources>

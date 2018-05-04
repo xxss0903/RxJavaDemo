@@ -44,40 +44,65 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/btn_click"
-        android:text="Click"
+
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/btn_countdown"
-        android:text="测试 CountTimerEditText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/btnSwitchMap"
-        android:text="测试两个连续SwitchMap"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
 
-    <Button
-        android:id="@+id/btnLimitPrintScreen"
-        android:text="@string/limit_printscreen"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+            <Button
+                android:id="@+id/btn_click"
+                android:text="Click"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-    <Button
-        android:text="@string/scheme_open"
-        android:id="@+id/btnSchemeOpen"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+            <Button
+                android:id="@+id/btn_countdown"
+                android:text="测试 CountTimerEditText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
 
-    <Button
-        android:id="@+id/btnEnterScan"
-        android:text="@string/qr_scan"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+            <Button
+                android:id="@+id/btnSwitchMap"
+                android:text="测试两个连续SwitchMap"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
 
+            <Button
+                android:id="@+id/btnLimitPrintScreen"
+                android:text="@string/limit_printscreen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:text="@string/scheme_open"
+                android:id="@+id/btnSchemeOpen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/btnEnterScan"
+                android:text="@string/qr_scan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/btn_mock_location"
+                android:text="模拟经纬度"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/btn_libphonenumber"
+                android:text="@string/seperate_phonenumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+    </ScrollView>
 </LinearLayout>

@@ -1,1 +1,1 @@
-include ':app', ':webbrowser', ':hsbczxing'
+include ':app', ':webbrowser', ':hsbczxing', ':bugxiaomiwear2', ':libphonenumber', ':library'

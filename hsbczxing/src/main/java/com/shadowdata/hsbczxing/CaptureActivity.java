@@ -425,7 +425,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
      *
      * @param context current context
      * @param dp      origin dp value
-     * @return px值
+     * @return px value
      */
     public static float dp2px(Context context, float dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,

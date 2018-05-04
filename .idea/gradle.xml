@@ -9,7 +9,10 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/bugxiaomiwear2" />
             <option value="$PROJECT_DIR$/hsbczxing" />
+            <option value="$PROJECT_DIR$/libphonenumber" />
+            <option value="$PROJECT_DIR$/library" />
             <option value="$PROJECT_DIR$/webbrowser" />
           </set>
         </option>
