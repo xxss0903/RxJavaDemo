@@ -1,23 +1,18 @@
 package com.example.zack.rxjavademo.libphonenumberdemo
 
-import android.content.Context
 import android.os.Bundle
-import android.support.annotation.IntegerRes
 import android.support.v7.app.AppCompatActivity
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
-import android.widget.ArrayAdapter
-import android.widget.Toast
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.*
 import com.example.zack.rxjavademo.R
 import com.google.i18n.phonenumbers.PhoneNumberUtil
-import com.google.i18n.phonenumbers.Phonemetadata
 import com.google.i18n.phonenumbers.Phonenumber
 import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder
 import com.hsbc.mobileXNative.fps.util.ProxyIdValidator
 import io.reactivex.Observable
-import io.reactivex.ObservableEmitter
-import io.reactivex.ObservableOnSubscribe
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.Function
@@ -29,20 +24,19 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 import kotlinx.android.synthetic.main.activity_libphonenumber.*
-import kotlin.collections.LinkedHashMap
 
 /**
  * Created by zack zeng on 2018/5/3.
  */
 class LibPhoneNumberActivity : AppCompatActivity() {
 
-
-    private var regionMap: LinkedHashMap<String, Int> = linkedMapOf()
-    private var filterRegionMap: LinkedHashMap<String, Int> = linkedMapOf()
     private var countryRegionList: ArrayList<String> = arrayListOf()
-//    private var filterRegionList: ArrayList<String> = arrayListOf()
-//    private var countryCodeList: ArrayList<String> = arrayListOf()
-//    private var countryDesList: ArrayList<String> = arrayListOf()
+    private val countryList: MutableList<Country> = mutableListOf()
+    private val filterCountryList: MutableList<Country> = mutableListOf()
+    private val filterCountryFullName: MutableList<String> = mutableListOf()
+    private var selectedCountry: Country = Country("HK", "Hong Kong", 582)
+
+    private var popupWindow: PopupWindow? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,27 +47,38 @@ class LibPhoneNumberActivity : AppCompatActivity() {
     }
 
     private fun initDatas() {
-        countryRegionList.addAll(PhoneNumberUtil.getInstance().supportedRegions.sorted())
+        countryRegionList.addAll(PhoneNumberUtil.getInstance().supportedRegions)
 
         for (supportedRegion in countryRegionList) {
             val countryCode = PhoneNumberUtil.getInstance().getCountryCodeForRegion(supportedRegion)
-            regionMap[supportedRegion] = countryCode
-            Log.d("PhoneNumber", "Region: $supportedRegion  # Country Code: $countryCode")
+            val fullName = Locale("en", supportedRegion).getDisplayCountry(Locale.ENGLISH) + "(+$countryCode)"
+            countryList.add(Country(supportedRegion, fullName, countryCode))
         }
+
+        // resort by country full name
+        Collections.sort(countryList, object : Comparator<Country> {
+            override fun compare(o1: Country?, o2: Country?): Int {
+                if (o1 == null || o2 == null) {
+                    return 0
+                }
+                return o1.fullName.compareTo(o2.fullName)
+            }
+        })
     }
 
     private lateinit var regionAdapter: ArrayAdapter<String>
 
-    private lateinit var publishSubject: PublishSubject<String>
+    private lateinit var countryPublishSubject: PublishSubject<String>
+    private lateinit var phonePublishSubject: PublishSubject<String>
     private lateinit var compositeDisposable: CompositeDisposable
 
     private fun initView() {
 
         compositeDisposable = CompositeDisposable()
-        publishSubject = PublishSubject.create()
+        countryPublishSubject = PublishSubject.create()
+        phonePublishSubject = PublishSubject.create()
 
         regionAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item)
-        regionAdapter.addAll(regionMap.keys)
         regionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         sp_countrycode.adapter = regionAdapter
         sp_countrycode.setSelection(countryRegionList.indexOf("CN"))
@@ -81,11 +86,34 @@ class LibPhoneNumberActivity : AppCompatActivity() {
         btn_parse.setOnClickListener {
             val phoneNumber = et_input.text
             if (phoneNumber.isNotBlank()) {
-                parsePhoneNumber(phoneNumber)
+                parsePhoneNumber(phoneNumber.toString())
             } else {
                 Toast.makeText(this, "Please Input Phone Number", Toast.LENGTH_SHORT).show()
             }
         }
+
+        et_input.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (s.toString().isNotBlank()) {
+                    startMatchPhoneNumber(s.toString())
+                    searchPhoneNumberCountry(s.toString())
+                }
+            }
+        })
+
+        et_country.setOnFocusChangeListener(object : View.OnFocusChangeListener {
+            override fun onFocusChange(v: View?, hasFocus: Boolean) {
+                dismissCountryCodeList()
+            }
+        })
+
 
         et_country.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -98,46 +126,121 @@ class LibPhoneNumberActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (s.toString().isNotBlank()) {
                     startMatch(s.toString())
+                } else {
+                    dismissCountryCodeList()
                 }
             }
         })
-        val disposableObserver: DisposableObserver<Set<String>> = object : DisposableObserver<Set<String>>() {
+
+        val phoneObserver: DisposableObserver<String> = object : DisposableObserver<String>() {
+            override fun onComplete() {
+
+            }
+
+            override fun onNext(t: String?) {
+                if (t == null) {
+                    return
+                }
+                parsePhoneNumber(t)
+            }
+
+            override fun onError(e: Throwable?) {
+            }
+
+        }
+
+        val countryObserver: DisposableObserver<MutableList<Country>> = object : DisposableObserver<MutableList<Country>>() {
             override fun onError(e: Throwable?) {
                 Toast.makeText(this@LibPhoneNumberActivity, e?.message, Toast.LENGTH_SHORT).show()
             }
 
-            override fun onNext(t: Set<String>?) {
-                regionAdapter.clear()
-                regionAdapter.addAll(t)
+
+            override fun onNext(t: MutableList<Country>?) {
+                if (t == null) {
+                    return
+                }
+
+                filterCountryFullName.clear()
+                if (t.size == 0) {
+                    dismissCountryCodeList()
+                    return
+                }
+
+                for (country in t) {
+                    filterCountryFullName.add(country.fullName)
+                }
+                showCountryCodeList()
             }
 
             override fun onComplete() {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
             }
 
         }
-        publishSubject.debounce(200, TimeUnit.MILLISECONDS)
+
+        phonePublishSubject.debounce(500, TimeUnit.MILLISECONDS)
+                .filter(object : Predicate<String> {
+                    override fun test(t: String): Boolean {
+                        return t.isNotBlank()
+                    }
+                })
+                .switchMap(object : Function<String, Observable<String>> {
+                    override fun apply(t: String): Observable<String> {
+                        return Observable.just(t)
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(phoneObserver)
+
+        countryPublishSubject.debounce(200, TimeUnit.MILLISECONDS)
                 .filter(object : Predicate<String> {
                     override fun test(t: String): Boolean {
                         return t.length > 0
                     }
                 })
-                .switchMap(object : Function<String, Observable<Set<String>>> {
-                    override fun apply(t: String): Observable<Set<String>> {
-                        filterRegionMap.clear()
-                        for (entry in regionMap) {
-                            if (judgeContainsRegion(t.toUpperCase().trim(), entry.key)) {
-                                filterRegionMap[entry.key] = entry.value
+                .switchMap(object : Function<String, Observable<MutableList<Country>>> {
+                    override fun apply(t: String): Observable<MutableList<Country>> {
+                        filterCountryList.clear()
+                        for (country in countryList) {
+                            if (judgeContainsRegion(t.toUpperCase().trim(), country.fullName.toUpperCase().trim())) {
+                                filterCountryList.add(country)
                             }
                         }
-                        return Observable.just(filterRegionMap.keys)
+                        return Observable.just(filterCountryList)
                     }
                 })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(disposableObserver)
+                .subscribe(countryObserver)
 
-        compositeDisposable.add(disposableObserver)
+        compositeDisposable.add(phoneObserver)
+        compositeDisposable.add(countryObserver)
+    }
+
+    private fun startMatchPhoneNumber(phoneNumber: String) {
+        phonePublishSubject.onNext(phoneNumber)
+    }
+
+    private fun searchPhoneNumberCountry(phone: String) {
+        try {
+            val phoneNumberLong = phone.toLong()
+            val phoneNumber = Phonenumber.PhoneNumber()
+            val fitCountryList: MutableList<Country> = mutableListOf()
+            for (country in countryList) {
+                phoneNumber.nationalNumber = phoneNumberLong
+                phoneNumber.countryCode = country.codeInt
+                if (PhoneNumberUtil.getInstance().isValidNumber(phoneNumber)) {
+                    fitCountryList.add(country)
+                }
+            }
+            var info = ""
+            for (country in fitCountryList) {
+                info += "当前号码:${country.fullName}  +${country.codeInt}-$phone" + "\n"
+            }
+            tv_phone_info.text = info
+        } catch (e: NumberFormatException) {
+            e.printStackTrace()
+        }
     }
 
     override fun onDestroy() {
@@ -146,53 +249,93 @@ class LibPhoneNumberActivity : AppCompatActivity() {
     }
 
     private fun startMatch(s: String) {
-        publishSubject.onNext(s)
+        countryPublishSubject.onNext(s)
     }
 
-    private fun judgeContainsRegion(key: String, target: String): Boolean {
-        var countryName = Locale("en", target).getDisplayCountry(Locale.ENGLISH)
-        countryName = countryName.replace(" ", "")
-
-        Log.d("PhoneNumber", key + " compare : " + countryName + " #" + countryName.contains(key))
-
-        return countryName.toUpperCase().replace(" ", "").contains(key.toUpperCase().replace(" ", ""))
+    private fun judgeContainsRegion(target: String, fullName: String): Boolean {
+        return fullName.toUpperCase().replace(" ", "").startsWith(target.toUpperCase().replace(" ", ""))
     }
 
-    private fun parsePhoneNumber(phoneNumberStr: Editable) {
+    private fun parsePhoneNumber(phoneNumberStr: String) {
         try {
-            if (sp_countrycode.selectedItem.equals("HK")) {
-                if (ProxyIdValidator.isValidMobileNum(phoneNumberStr.toString())) {
-                    val phoneNumber = PhoneNumberUtil.getInstance().parse(phoneNumberStr, sp_countrycode.selectedItem as String?)
+            if (selectedCountry.codeInt == 852) {
+                if (ProxyIdValidator.isValidMobileNum(phoneNumberStr)) {
+                    val phoneNumber = PhoneNumberUtil.getInstance().parse(phoneNumberStr, selectedCountry.codeName)
                     setPhoneNumber(phoneNumber)
+                } else {
+                    tv_international_format.text = "Phone Number Wrong."
                 }
             } else {
-                val phoneNumber = PhoneNumberUtil.getInstance().parse(phoneNumberStr, sp_countrycode.selectedItem as String?)
+                val phoneNumber = PhoneNumberUtil.getInstance().parse(phoneNumberStr, selectedCountry.codeName)
+                if (phoneNumberStr.startsWith('0')) {
+                    phoneNumber.numberOfLeadingZeros = 0
+                }
                 val isValidPhoneNumber = validPhoneNumber(phoneNumber)
+
                 if (isValidPhoneNumber) {
                     setPhoneNumber(phoneNumber)
                 } else {
-                    Toast.makeText(this, "Invalid Phone Number", Toast.LENGTH_SHORT).show()
+                    tv_international_format.text = "Phone Number Wrong."
                 }
             }
         } catch (e: Exception) {
-            Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
+            e.printStackTrace()
+            tv_international_format.text = "Phone Number Wrong: " + e.message
         }
     }
 
     private fun setPhoneNumber(phoneNumber: Phonenumber.PhoneNumber) {
-        tv_international_format.text = "Phone Number: " + phoneNumber.nationalNumber
-        tv_countrycode.text = "Country Code: " + filterRegionMap[sp_countrycode.selectedItem]
-        tv_countryname.text = PhoneNumberOfflineGeocoder.getInstance().getDescriptionForValidNumber(phoneNumber, Locale.getDefault())
+        var content = "Phone Number: " + phoneNumber.nationalNumber + "\n" +
+                "Country Code: " + selectedCountry.codeInt + "\n" +
+                PhoneNumberOfflineGeocoder.getInstance().getDescriptionForValidNumber(phoneNumber, Locale.getDefault())
+//        tv_international_format.text = "Phone Number: " + phoneNumber.nationalNumber
+//        tv_countrycode.text = "Country Code: " + selectedCountry.codeInt
+//        tv_countryname.text = PhoneNumberOfflineGeocoder.getInstance().getDescriptionForValidNumber(phoneNumber, Locale.getDefault())
         if (phoneNumber.hasNumberOfLeadingZeros()) {
-            tv_seperate_number.text = "+" + filterRegionMap[sp_countrycode.selectedItem] + " " + phoneNumber.numberOfLeadingZeros + phoneNumber.nationalNumber
+            content += "\n +" + selectedCountry.codeInt + " " + phoneNumber.numberOfLeadingZeros + phoneNumber.nationalNumber
         } else {
-            tv_seperate_number.text = "+" + filterRegionMap[sp_countrycode.selectedItem] + " " + phoneNumber.nationalNumber
+            content += "\n +" + selectedCountry.codeInt + " " + phoneNumber.nationalNumber
         }
+        tv_international_format.text = content
     }
 
     private fun validPhoneNumber(phoneNumber: Phonenumber.PhoneNumber): Boolean {
         return PhoneNumberUtil.getInstance().isValidNumber(phoneNumber)
     }
 
+    private var listView: View? = null
+    private lateinit var listAdapter: ArrayAdapter<String>
+    private var isItemSelected = false
+
+    private fun showCountryCodeList() {
+        if (popupWindow == null) {
+            listView = LayoutInflater.from(this).inflate(R.layout.countrycode_popupwindow, null)
+            val lvCountry = listView?.findViewById<ListView>(R.id.lv_countrycode)
+            lvCountry?.setOnItemClickListener { parent, view, position, id ->
+                val country = filterCountryList[position]
+                selectedCountry = country
+                et_country.setText(country.fullName)
+                dismissCountryCodeList()
+                isItemSelected = true
+            }
+            listAdapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, filterCountryFullName)
+            lvCountry?.adapter = listAdapter
+            popupWindow = PopupWindow()
+            popupWindow?.contentView = listView
+            popupWindow?.width = 800
+            popupWindow?.height = 600
+            popupWindow?.showAsDropDown(et_country)
+        } else {
+            listAdapter.notifyDataSetInvalidated()
+        }
+    }
+
+    private fun dismissCountryCodeList() {
+        if (popupWindow != null) {
+            popupWindow?.dismiss()
+            listView = null
+            popupWindow = null
+        }
+    }
 
 }

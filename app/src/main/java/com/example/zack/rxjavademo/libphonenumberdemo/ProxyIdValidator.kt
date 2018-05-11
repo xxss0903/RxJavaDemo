@@ -10,8 +10,8 @@ object ProxyIdValidator {
 
     val numericPattern = Pattern.compile("[0-9]*")
     val emailPattern = Pattern.compile("^(([a-zA-Z0-9\\_\\-]+(\\.[a-zA-Z0-9\\_\\-]+)*)@([a-zA-Z0-9\\-]+\\.([a-zA-Z0-9\\-]+\\.)*[a-zA-Z0-9\\-]{2,}))$")
-    val mobilePattern1 = Pattern.compile("^852[5679]{1}[0-9]{7}")
-    val mobilePattern2 = Pattern.compile("^[5679]{1}[0-9]{7}")
+    val mobilePattern1 = Pattern.compile("^852[456789]{1}[0-9]{7}")
+    val mobilePattern2 = Pattern.compile("^[456789]{1}[0-9]{7}")
     val alphanumericPattern = Pattern.compile("^[0-9a-zA-Z_@.]*$")
 
     val MAX_LENGTH = 34

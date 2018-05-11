@@ -1,6 +1,8 @@
 package com.example.zack.rxjavademo.qrscanner
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
 import com.google.zxing.*
 import com.google.zxing.common.BitMatrix
 import com.google.zxing.common.HybridBinarizer
@@ -51,8 +53,63 @@ class QRUtil {
         if (matrix == null) {
             return null
         }
-        return BarcodeEncoder().createBitmap(matrix)
+
+        return createBitmap(matrix)
     }
+
+    fun createBitmap(matrix: BitMatrix): Bitmap {
+        val width = matrix.width
+        val height = matrix.height
+        val pixels = IntArray(width * height)
+        for (y in 0 until height) {
+            val offset = y * width
+            for (x in 0 until width) {
+                when (matrix[x, y]) {
+                    true -> {
+                        pixels[offset + x] = 0xFFDC143C.toInt()
+                    }
+                    else -> {
+                        pixels[offset + x] = 0xFFFFFFFF.toInt()
+                    }
+                }
+            }
+        }
+
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+//        bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
+
+
+        val canvas = Canvas(bitmap)
+        val paint = Paint()
+        val paint2 = Paint()
+        val paint3 = Paint()
+        paint.color = 0xFFFC121C.toInt()
+        paint2.color = 0xFFF888F8.toInt()
+        paint3.color = 0xFFDDDF88.toInt()
+
+        for (y in 0 until height) {
+            val offset = y * width
+            for (x in 0 until width) {
+                when (matrix[x, y]) {
+                    true -> {
+                        if (x % 2 == 0) {
+                            canvas.drawCircle(x.toFloat(), y.toFloat(), 1.toFloat(), paint)
+                        } else {
+                            canvas.drawCircle(x.toFloat(), y.toFloat(), 1.toFloat(), paint2)
+                        }
+                    }
+                    else -> {
+//                        if (x % 2 == 0) {
+                            canvas.drawCircle(x.toFloat(), y.toFloat(), 1.toFloat(), paint3)
+//                        }
+                    }
+                }
+            }
+        }
+//        canvas.drawCircle(100f, 100f, 20f, paint)
+        return bitmap
+    }
+
 
     fun scanImageQrCode(qrBitmap: Bitmap?): Observable<String> {
         return Observable.create(ObservableOnSubscribe<String> { e ->
