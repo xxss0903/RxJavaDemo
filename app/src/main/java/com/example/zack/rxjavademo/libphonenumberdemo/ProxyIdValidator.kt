@@ -8,11 +8,21 @@ import java.util.regex.Pattern
 
 object ProxyIdValidator {
 
+
     val numericPattern = Pattern.compile("[0-9]*")
     val emailPattern = Pattern.compile("^(([a-zA-Z0-9\\_\\-]+(\\.[a-zA-Z0-9\\_\\-]+)*)@([a-zA-Z0-9\\-]+\\.([a-zA-Z0-9\\-]+\\.)*[a-zA-Z0-9\\-]{2,}))$")
-    val mobilePattern1 = Pattern.compile("^852[456789]{1}[0-9]{7}")
-    val mobilePattern2 = Pattern.compile("^[456789]{1}[0-9]{7}")
+    val hkMobilePattern1 = Pattern.compile("^852[456789]{1}[0-9]{7}")
+    val hkMobilePattern2 = Pattern.compile("^852-[456789]{1}[0-9]{7}")
+    val hkMobilePattern3 = Pattern.compile("^\\+852-[456789]{1}[0-9]{7}")
+    val hkMobilePattern4 = Pattern.compile("^\\+852[456789]{1}[0-9]{7}")
+    val hkMobilePattern5 = Pattern.compile("^[456789]{1}[0-9]{7}")
+//    val newHkMobilePattern1 = Pattern.compile("^\\+(852[0-9]{8})|(852-[0-9]{8})$")
+    val newHkMobilePattern = Pattern.compile("^\\+?(852(-?)[0-9]{8})$")
+    val mobilePattern3 = Pattern.compile("^[0-9]*-[0-9]*$")
+    val mobilePattern4 = Pattern.compile("^\\+[0-9]*-[0-9]*$")
+    val mobilePattern5 = Pattern.compile("^\\+[0-9]*$")
     val alphanumericPattern = Pattern.compile("^[0-9a-zA-Z_@.]*$")
+    val fpsIdPattern = Pattern.compile("^[0-9]{7}$")
 
     val MAX_LENGTH = 34
 
@@ -42,7 +52,7 @@ object ProxyIdValidator {
             } else if (input.length == 7) {
                 return ValidationResult.SUCCESS
             } else {
-                if (isValidMobileNum(input)) {
+                if (isValidHKMobileNum(input)) {
                     return ValidationResult.SUCCESS
                 } else {
                     return ValidationResult.INVALID_MOBILE_NUM
@@ -86,11 +96,23 @@ object ProxyIdValidator {
         return isMatchingExpectingPatterns(input, arrayOf(numericPattern), true)
     }
 
-    fun isValidMobileNum(input: String): Boolean {
-        return isMatchingExpectingPatterns(input, arrayOf(mobilePattern1, mobilePattern2), false)
+    fun isValidHKMobileNum(input: String): Boolean {
+        return isMatchingExpectingPatterns(input, arrayOf(hkMobilePattern1, hkMobilePattern2, hkMobilePattern3, hkMobilePattern4, hkMobilePattern5), false)
+    }
+
+    fun isValidNewHkMobileNum(input: String): Boolean{
+        return isMatchingExpectingPatterns(input, arrayOf(newHkMobilePattern), true)
+    }
+
+    fun isMayBePhoneNumber(input: String): Boolean {
+        return isMatchingExpectingPatterns(input, arrayOf(mobilePattern3, mobilePattern4, mobilePattern5, numericPattern), false)
     }
 
     fun isValidEmail(input: String): Boolean {
         return isMatchingExpectingPatterns(input, arrayOf(emailPattern), true)
+    }
+
+    fun isFpsId(input: String): Boolean {
+        return isMatchingExpectingPatterns(input, arrayOf(fpsIdPattern), true)
     }
 }

@@ -2,8 +2,13 @@ package com.example.zack.rxjavademo.libphonenumberdemo
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.text.Editable
+import android.text.InputFilter
+import android.text.Spanned
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
@@ -24,18 +29,22 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 import kotlinx.android.synthetic.main.activity_libphonenumber.*
+import java.util.regex.Pattern
 
 /**
  * Created by zack zeng on 2018/5/3.
  */
 class LibPhoneNumberActivity : AppCompatActivity() {
 
+    val REGEX_CHAR = "[0-9a-zA-Z@._+\\-]"
+    val TAG = "LibPhoneNumber"
+
     private var countryRegionList: ArrayList<String> = arrayListOf()
     private val countryList: MutableList<Country> = mutableListOf()
-    private val filterCountryList: MutableList<Country> = mutableListOf()
+    private var filterCountryList: MutableList<Country> = mutableListOf()
     private val filterCountryFullName: MutableList<String> = mutableListOf()
     private var selectedCountry: Country = Country("HK", "Hong Kong", 582)
-
+    private var isInputByHand = true
     private var popupWindow: PopupWindow? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,15 +77,19 @@ class LibPhoneNumberActivity : AppCompatActivity() {
 
     private lateinit var regionAdapter: ArrayAdapter<String>
 
+    private lateinit var superFieldPublishSubject: PublishSubject<String>
     private lateinit var countryPublishSubject: PublishSubject<String>
     private lateinit var phonePublishSubject: PublishSubject<String>
     private lateinit var compositeDisposable: CompositeDisposable
+
+    private val s = "[0-9a-zA-Z@._\\-]"
 
     private fun initView() {
 
         compositeDisposable = CompositeDisposable()
         countryPublishSubject = PublishSubject.create()
         phonePublishSubject = PublishSubject.create()
+        superFieldPublishSubject = PublishSubject.create()
 
         regionAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item)
         regionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -92,6 +105,17 @@ class LibPhoneNumberActivity : AppCompatActivity() {
             }
         }
 
+        et_input.filters = arrayOf<InputFilter>(object : InputFilter {
+            override fun filter(source: CharSequence?, start: Int, end: Int, dest: Spanned?, dstart: Int, dend: Int): CharSequence {
+                val pattern = Pattern.compile(REGEX_CHAR)
+                val matcher = pattern.matcher(source.toString())
+                return if (matcher.find()) {
+                    source.toString()
+                } else {
+                    ""
+                }
+            }
+        })
         et_input.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
 
@@ -101,7 +125,8 @@ class LibPhoneNumberActivity : AppCompatActivity() {
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                if (s.toString().isNotBlank()) {
+                dismissCountryCodeList()
+                if (isInputByHand && s.toString().isNotBlank()) {
                     startMatchPhoneNumber(s.toString())
                     searchPhoneNumberCountry(s.toString())
                 }
@@ -113,7 +138,6 @@ class LibPhoneNumberActivity : AppCompatActivity() {
                 dismissCountryCodeList()
             }
         })
-
 
         et_country.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -177,17 +201,41 @@ class LibPhoneNumberActivity : AppCompatActivity() {
 
         }
 
-        phonePublishSubject.debounce(500, TimeUnit.MILLISECONDS)
+        superFieldPublishSubject.debounce(2, TimeUnit.SECONDS)
+                .filter(object : Predicate<String> {
+                    override fun test(t: String): Boolean {
+                        Log.d(TAG, "super field fiter")
+                        return t.isNotBlank()
+                    }
+                })
+                .switchMap(object : Function<String, Observable<MatchResult>> {
+                    override fun apply(t: String): Observable<MatchResult> {
+                        return SuperFieldMatcher.instance.parse(t)
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    when (it.type) {
+                        ProxyIdEnum.SEARCHCOUNTRY -> {
+                            filterCountryList = it.resultList
+                            showCountryCodeList()
+                        }
+                        else -> {
+                            showSuperFieldText(it)
+                        }
+                    }
+                }, {
+                    Log.d(TAG, it.message)
+                })
+
+        phonePublishSubject.debounce(2, TimeUnit.SECONDS)
                 .filter(object : Predicate<String> {
                     override fun test(t: String): Boolean {
                         return t.isNotBlank()
                     }
                 })
-                .switchMap(object : Function<String, Observable<String>> {
-                    override fun apply(t: String): Observable<String> {
-                        return Observable.just(t)
-                    }
-                })
+                .switchMap { t -> Observable.just(t) }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(phoneObserver)
@@ -201,9 +249,18 @@ class LibPhoneNumberActivity : AppCompatActivity() {
                 .switchMap(object : Function<String, Observable<MutableList<Country>>> {
                     override fun apply(t: String): Observable<MutableList<Country>> {
                         filterCountryList.clear()
-                        for (country in countryList) {
-                            if (judgeContainsRegion(t.toUpperCase().trim(), country.fullName.toUpperCase().trim())) {
-                                filterCountryList.add(country)
+                        if (t.startsWith("+")) {
+                            val phoneNumber = PhoneNumberUtil.getInstance().parse(t, "")
+                            for (country in countryList) {
+                                if (country.codeInt == phoneNumber.countryCode) {
+                                    filterCountryList.add(country)
+                                }
+                            }
+                        } else {
+                            for (country in countryList) {
+                                if (judgeContainsRegion(t.toUpperCase().trim(), country.fullName.toUpperCase().trim())) {
+                                    filterCountryList.add(country)
+                                }
                             }
                         }
                         return Observable.just(filterCountryList)
@@ -218,7 +275,9 @@ class LibPhoneNumberActivity : AppCompatActivity() {
     }
 
     private fun startMatchPhoneNumber(phoneNumber: String) {
+        Log.d(TAG, "start match input content.")
         phonePublishSubject.onNext(phoneNumber)
+        superFieldPublishSubject.onNext(phoneNumber)
     }
 
     private fun searchPhoneNumberCountry(phone: String) {
@@ -245,7 +304,7 @@ class LibPhoneNumberActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        compositeDisposable.clear()
+        clearSubscribe()
     }
 
     private fun startMatch(s: String) {
@@ -259,7 +318,7 @@ class LibPhoneNumberActivity : AppCompatActivity() {
     private fun parsePhoneNumber(phoneNumberStr: String) {
         try {
             if (selectedCountry.codeInt == 852) {
-                if (ProxyIdValidator.isValidMobileNum(phoneNumberStr)) {
+                if (ProxyIdValidator.isValidHKMobileNum(phoneNumberStr)) {
                     val phoneNumber = PhoneNumberUtil.getInstance().parse(phoneNumberStr, selectedCountry.codeName)
                     setPhoneNumber(phoneNumber)
                 } else {
@@ -288,9 +347,6 @@ class LibPhoneNumberActivity : AppCompatActivity() {
         var content = "Phone Number: " + phoneNumber.nationalNumber + "\n" +
                 "Country Code: " + selectedCountry.codeInt + "\n" +
                 PhoneNumberOfflineGeocoder.getInstance().getDescriptionForValidNumber(phoneNumber, Locale.getDefault())
-//        tv_international_format.text = "Phone Number: " + phoneNumber.nationalNumber
-//        tv_countrycode.text = "Country Code: " + selectedCountry.codeInt
-//        tv_countryname.text = PhoneNumberOfflineGeocoder.getInstance().getDescriptionForValidNumber(phoneNumber, Locale.getDefault())
         if (phoneNumber.hasNumberOfLeadingZeros()) {
             content += "\n +" + selectedCountry.codeInt + " " + phoneNumber.numberOfLeadingZeros + phoneNumber.nationalNumber
         } else {
@@ -303,39 +359,62 @@ class LibPhoneNumberActivity : AppCompatActivity() {
         return PhoneNumberUtil.getInstance().isValidNumber(phoneNumber)
     }
 
-    private var listView: View? = null
-    private lateinit var listAdapter: ArrayAdapter<String>
-    private var isItemSelected = false
+    private var rootView: View? = null
+    private lateinit var listAdapter: CountryListAdapter
 
     private fun showCountryCodeList() {
         if (popupWindow == null) {
-            listView = LayoutInflater.from(this).inflate(R.layout.countrycode_popupwindow, null)
-            val lvCountry = listView?.findViewById<ListView>(R.id.lv_countrycode)
-            lvCountry?.setOnItemClickListener { parent, view, position, id ->
-                val country = filterCountryList[position]
-                selectedCountry = country
-                et_country.setText(country.fullName)
-                dismissCountryCodeList()
-                isItemSelected = true
-            }
-            listAdapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, filterCountryFullName)
-            lvCountry?.adapter = listAdapter
+            rootView = LayoutInflater.from(this).inflate(R.layout.countrycode_popupwindow, null)
+            val rvCountry = rootView?.findViewById<RecyclerView>(R.id.rv_countrycode)
+            rvCountry?.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+
+            listAdapter = CountryListAdapter()
+            listAdapter.setOnItemClickListener(object : OnItemClickListener {
+                override fun onClick(position: Int, country: Country) {
+                    // choosed country
+                    dismissCountryCodeList()
+                    SuperFieldMatcher.instance.parse(country, et_input.text.toString())
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe({
+                                showSuperFieldText(it)
+                            }, {
+                                tv_superfield.text = it.message
+                            })
+                }
+            })
+            listAdapter.datas = filterCountryList
+            rvCountry?.adapter = listAdapter
             popupWindow = PopupWindow()
-            popupWindow?.contentView = listView
+            popupWindow?.contentView = rootView
             popupWindow?.width = 800
             popupWindow?.height = 600
-            popupWindow?.showAsDropDown(et_country)
+            popupWindow?.showAsDropDown(et_input)
         } else {
-            listAdapter.notifyDataSetInvalidated()
+            listAdapter.notifyDataSetChanged()
         }
+    }
+
+    private fun showSuperFieldText(result: MatchResult) {
+        clearSubscribe()
+        isInputByHand = false
+        val content = result.type.toString() + " # " + result.content
+        et_input.setText(result.content)
+        tv_superfield.text = content
+        isInputByHand = true
+    }
+
+    private fun clearSubscribe() {
+        compositeDisposable.clear()
     }
 
     private fun dismissCountryCodeList() {
         if (popupWindow != null) {
             popupWindow?.dismiss()
-            listView = null
+            rootView = null
             popupWindow = null
         }
     }
+
 
 }

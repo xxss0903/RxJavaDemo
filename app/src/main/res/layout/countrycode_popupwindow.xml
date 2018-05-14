@@ -6,8 +6,8 @@
     android:maxHeight="200dp"
     android:orientation="vertical">
 
-    <ListView
-        android:id="@+id/lv_countrycode"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv_countrycode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 

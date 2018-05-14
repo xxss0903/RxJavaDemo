@@ -10,6 +10,7 @@
         android:layout_height="wrap_content">
 
         <EditText
+            android:visibility="gone"
             android:id="@+id/et_country"
             android:hint="@string/input_country"
             android:layout_weight="4"
@@ -34,6 +35,13 @@
     </LinearLayout>
 
     <TextView
+        android:id="@+id/tv_superfield"
+        android:hint="Super field match"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:visibility="gone"
         android:id="@+id/tv_international_format"
         android:text="Country Code:"
         android:layout_width="match_parent"
@@ -63,6 +71,7 @@
         android:layout_height="wrap_content" />
 
     <Button
+        android:visibility="gone"
         android:text="Parse Phone Number"
         android:id="@+id/btn_parse"
         android:layout_width="wrap_content"
@@ -72,6 +81,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <TextView
+            android:visibility="gone"
             android:id="@+id/tv_phone_info"
             android:text="自动解析号码归属地"
             android:layout_width="match_parent"

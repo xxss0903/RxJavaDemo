@@ -5,7 +5,6 @@ import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.google.i18n.phonenumbers.Phonenumber
 import com.hsbc.mobileXNative.fps.util.ProxyIdValidator
 import io.reactivex.Observable
-import kotlinx.android.synthetic.main.activity_libphonenumber.*
 import java.util.*
 
 /**
@@ -23,15 +22,37 @@ enum class ProxyIdEnum {
 class MatchResult {
     var content: String = ""
     var type: ProxyIdEnum = ProxyIdEnum.UNKNOWN
+    var resultList: MutableList<Country> = mutableListOf()
 }
 
 class SuperFieldMatcher {
 
+    var FPSID_PRIORITY = false
+    var HK_PRIORITY = false
     val TAG = "SuperFieldMatcher"
-    val EMAIL_TAG = "@"
 
     companion object {
         val instance = SuperFieldMatcher()
+    }
+
+    fun parse(country: Country?, content: String): Observable<MatchResult> {
+        if (country == null) {
+            return parse(content)
+        } else {
+            val result = MatchResult()
+            when (country.codeName) {
+                "FPSID" -> {
+                    result.type = ProxyIdEnum.FPSID
+                    result.content = content
+                }
+                else -> {
+                    result.type = ProxyIdEnum.PHONENUMBER
+                    result.content = "+" + country.codeInt + "-" + content
+
+                }
+            }
+            return Observable.just(result)
+        }
     }
 
     fun parse(content: String): Observable<MatchResult> {
@@ -44,19 +65,7 @@ class SuperFieldMatcher {
             }
             matchPhoneNumber(content) -> {
                 Log.e(TAG, "is phone number $content")
-                val phoneNumber = matchAccuratePhoneNumber(content)
-                if (phoneNumber == null) {
-                    if (matchFpsId(content)) {
-                        result.type = ProxyIdEnum.FPSID
-                        result.content = content
-                    } else {
-                        result.type = ProxyIdEnum.UNKNOWN
-                        result.content = content
-                    }
-                } else {
-                    result.type = ProxyIdEnum.PHONENUMBER
-                    result.content = getFormattedPhoneNumber(phoneNumber)
-                }
+                matchAccuratePhoneNumber(content, result)
             }
             else -> {
                 // do nothing
@@ -66,31 +75,60 @@ class SuperFieldMatcher {
         return Observable.just(result)
     }
 
-    private fun matchAccuratePhoneNumber(content: String): Phonenumber.PhoneNumber? {
+    private fun matchAccuratePhoneNumber(content: String, result: MatchResult): Phonenumber.PhoneNumber? {
         if (content.startsWith("852") || content.startsWith("+852")) {
             Log.e(TAG, "hong kong number")
-            if (ProxyIdValidator.isValidHKMobileNum(content)) {
+            if (ProxyIdValidator.isValidNewHkMobileNum(content)) {
                 val number = content.replaceFirst("852", "").replace("+", "").replace("-", "")
                 val phoneNumber = Phonenumber.PhoneNumber()
                 phoneNumber.countryCode = 852
                 phoneNumber.nationalNumber = number.toLong()
+
+                result.type = ProxyIdEnum.PHONENUMBER
+                result.content = getFormattedPhoneNumber(phoneNumber)
                 return phoneNumber
             } else {
+                result.type = ProxyIdEnum.UNKNOWN
                 return null
             }
         } else {
-            if (ProxyIdValidator.isAllNumeric(content)) {
-                if (!ProxyIdValidator.isFpsId(content) && ProxyIdValidator.isValidHKMobileNum(content)) {
-                    return PhoneNumberUtil.getInstance().parse(content, "HK")
-                } else if (content.length > 7) {
+            if (content.startsWith('+')) {
+                val phoneNumber = PhoneNumberUtil.getInstance().parse(content, "")
+                result.type = ProxyIdEnum.PHONENUMBER
+                result.content = getFormattedPhoneNumber(phoneNumber)
+                return phoneNumber
+            } else if (ProxyIdValidator.isAllNumeric(content)) {
+                if (FPSID_PRIORITY && ProxyIdValidator.isFpsId(content)) {
+                    result.type = ProxyIdEnum.FPSID
+                    result.content = content
+                    return null
+                }
+                if (HK_PRIORITY && content.length == 8) {
+                    val phoneNumber = PhoneNumberUtil.getInstance().parse(content, "HK")
+                    result.type = ProxyIdEnum.PHONENUMBER
+                    result.content = getFormattedPhoneNumber(phoneNumber)
+                    return phoneNumber
+                } else {
                     // show country code selection list
-                    searchPhoneNumberCountry(content)
+                    val countryList = searchPhoneNumberCountry(content)
+                    if (countryList != null && countryList.size > 0) {
+                        result.type = ProxyIdEnum.SEARCHCOUNTRY
+                        result.resultList.addAll(countryList)
+                        if (content.length == 7) {
+                            val country = getFpsIdCountry(content)
+                            result.resultList.add(country)
+                        }
+                    } else if (content.length == 7) {
+                        // if match fpsid
+                        result.type = ProxyIdEnum.FPSID
+                        result.content = content
+                    }
                 }
             } else {
                 val number = content.replace("+", "")
                 val numberList = number.split("-")
-                var countryCode: String = ""
-                var nationalNumber: String = ""
+                var countryCode = ""
+                var nationalNumber = ""
                 if (numberList.size == 1) {
                     nationalNumber = numberList[0]
                 } else if (numberList.size == 2) {
@@ -101,14 +139,33 @@ class SuperFieldMatcher {
                     val phoneNumber = Phonenumber.PhoneNumber()
                     phoneNumber.countryCode = countryCode.toInt()
                     phoneNumber.nationalNumber = nationalNumber.toLong()
+
+                    result.type = ProxyIdEnum.PHONENUMBER
+                    result.content = getFormattedPhoneNumber(phoneNumber)
                     return phoneNumber
                 } else {
                     // shouw country code selection list
-                    searchPhoneNumberCountry(content)
+                    val countryList = searchPhoneNumberCountry(content)
+                    if (countryList != null && countryList.size > 0) {
+                        result.type = ProxyIdEnum.SEARCHCOUNTRY
+                        result.resultList.addAll(countryList)
+                        if (content.length == 7) {
+                            val country = getFpsIdCountry(content)
+                            result.resultList.add(country)
+                        }
+                    } else if (content.length == 7) {
+                        // if match fpsid
+                        result.type = ProxyIdEnum.FPSID
+                        result.content = content
+                    }
                 }
             }
         }
         return null
+    }
+
+    private fun getFpsIdCountry(content: String): Country {
+        return Country("FPSID", "FPSID", content.toInt())
     }
 
     private fun matchPhoneNumber(content: String): Boolean {
@@ -153,7 +210,7 @@ class SuperFieldMatcher {
         return tmpCountryList
     }
 
-    private fun searchPhoneNumberCountry(phone: String) {
+    private fun searchPhoneNumberCountry(phone: String): MutableList<Country>? {
         try {
             val phoneNumberLong = phone.toLong()
             val phoneNumber = Phonenumber.PhoneNumber()
@@ -170,10 +227,11 @@ class SuperFieldMatcher {
                 info += "当前号码:${country.fullName}  +${country.codeInt}-$phone" + "\n"
             }
             Log.d("PhoneNumber", info)
+            return fitCountryList
         } catch (e: NumberFormatException) {
             e.printStackTrace()
         }
+        return null
     }
-
 
 }
